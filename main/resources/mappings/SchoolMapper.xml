@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.ISchoolDao">
+    <resultMap id="School" type="School">
+        <id property="id" column="school_id"></id>
+        <result property="name" column="school_name"></result>
+        <collection property="classList" ofType="Class">
+            <id property="id" column="class_id"></id>
+            <result property="name" column="class_name"></result>
+            <result property="department" column="class_department"></result>
+        </collection>
+    </resultMap>
+
+    <select id="findAll" resultMap="School">
+        SELECT school.school_id  AS school_id,
+                school.name      AS school_name,
+                class.class_id   AS class_id,
+                class.name       AS class_name,
+                class.department AS class_department
+        FROM
+             school LEFT JOIN class ON school.school_id = class.school_id
+    </select>
+</mapper>

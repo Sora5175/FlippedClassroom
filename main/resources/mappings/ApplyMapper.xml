@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.IApplyDao">
+
+    <resultMap id="Student" type="Student">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="name" column="student_name"></result>
+        <result property="sex" column="student_sex"></result>
+        <result property="workId" column="student_id"></result>
+        <association property="aClass" javaType="Class">
+            <id property="id" column="class_id"></id>
+            <result property="name" column="class_name"></result>
+            <result property="department" column="class_department"></result>
+        </association>
+    </resultMap>
+
+    <resultMap id="School" type="School">
+        <id property="id" column="school_id"></id>
+        <result property="name" column="school_name"></result>
+    </resultMap>
+
+    <resultMap id="Apply" type="Apply">
+        <id property="id" column="apply_id"></id>
+        <association property="student" resultMap="Student"></association>
+        <association property="school" resultMap="School"></association>
+    </resultMap>
+
+    <select id="findAll" resultMap="Apply">
+        SELECT  apply.apply_id     AS apply_id,
+                user.avatar_url    AS user_avatar_url,
+                student.user_id    AS user_id,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department,
+                school.school_id   AS school_id,
+                school.name        AS school_name
+        FROM
+            apply JOIN student ON apply.user_id = student.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN user ON student.user_id = user.user_id
+            JOIN school ON class.school_id = school.school_id
+    </select>
+
+    <select id="findById" resultMap="Apply">
+        SELECT apply.apply_id     AS apply_id,
+               apply.user_id AS user_id
+        FROM apply
+        WHERE apply.user_id = #{id}
+    </select>
+
+    <delete id="deleteApply">
+        DELETE FROM apply
+        WHERE apply.user_id = #{student.id}
+    </delete>
+
+    <insert id="addApply">
+        INSERT INTO apply(user_id) VALUES (#{id})
+    </insert>
+</mapper>

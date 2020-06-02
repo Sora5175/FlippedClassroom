@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	http://www.springframework.org/schema/websocket
+    http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+    <!-- 开启注解扫描 -->
+    <context:component-scan base-package="com.sora">
+        <!-- 只扫描Controller -->
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!-- 静态资源配置 -->
+    <mvc:default-servlet-handler/>
+
+    <!-- 开启视图解析器 -->
+    <bean id="internalResourceViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/pages/"></property>
+        <property name="suffix" value=".jsp"></property>
+    </bean>
+
+    <mvc:interceptors>
+        <!-- 使用bean定义一个Interceptor，直接定义在mvc:interceptors根下面的Interceptor将拦截所有的请求 -->
+        <!-- <bean class="com.bybo.aca.web.interceptor.Login"/> -->
+        <mvc:interceptor>
+            <!-- 进行拦截：/**表示拦截所有controller -->
+            <mvc:mapping path="/**" />
+            <!-- 不进行拦截 -->
+            <mvc:exclude-mapping path="/view/**"/>
+            <mvc:exclude-mapping path="/user/login"/>
+            <mvc:exclude-mapping path="/user/registerStudent"/>
+            <mvc:exclude-mapping path="/school/findAll"/>
+            <mvc:exclude-mapping path="/webLogin"/>
+            <mvc:exclude-mapping path="/css/**"/>
+            <mvc:exclude-mapping path="/images/**"/>
+            <mvc:exclude-mapping path="/js/**"/>
+            <bean class="com.sora.interceptor.JWTInterceptor" />
+        </mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/apply/deleteApply"/>
+            <mvc:mapping path="/apply/upgrade"/>
+            <mvc:mapping path="/apply/findAll"/>
+            <bean class="com.sora.interceptor.AdminInterceptor" />
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <!-- 配置文件上传 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="utf-8"></property>
+        <property name="maxUploadSize" value="5242440"></property>
+    </bean>
+
+    <!--配置 webSocket-->
+    <bean id="questionHandler" class="com.sora.websocket.QuestionHandler"/>
+    <!-- 握手接口/拦截器 ，看项目需求是否需要-->
+    <bean id="questionHandshakeInterceptor" class="com.sora.interceptor.QuestionHandshakeInterceptor"/>
+    <websocket:handlers  allowed-origins="*">
+        <!--指定 webSocket 地址-->
+        <websocket:mapping path="/instantQuestion" handler="questionHandler"/>
+        <!--webSocket 握手-->
+        <websocket:handshake-interceptors>
+            <ref bean="questionHandshakeInterceptor"/>
+        </websocket:handshake-interceptors>
+    </websocket:handlers>
+
+    <!-- 注册 sockJS,sockJs是spring对不能使用websocket协议的客户端提供一种模拟 -->
+    <websocket:handlers  allowed-origins="*">
+        <websocket:mapping path="/sockjs/instantQuestion" handler="questionHandler" />
+        <websocket:handshake-interceptors>
+            <ref bean="questionHandshakeInterceptor" />
+        </websocket:handshake-interceptors>
+        <websocket:sockjs />
+    </websocket:handlers>
+
+    <!--配置 webSocket-->
+    <bean id="webLoginHandler" class="com.sora.websocket.WebLoginHandler"/>
+    <!-- 握手接口/拦截器 ，看项目需求是否需要-->
+    <bean id="webHandshakeInterceptor" class="com.sora.interceptor.WebHandshakeInterceptor"/>
+    <websocket:handlers  allowed-origins="*">
+        <!--指定 webSocket 地址-->
+        <websocket:mapping path="/webLogin" handler="webLoginHandler"/>
+        <websocket:handshake-interceptors>
+            <ref bean="webHandshakeInterceptor" />
+        </websocket:handshake-interceptors>
+    </websocket:handlers>
+
+    <!-- 注册 sockJS,sockJs是spring对不能使用websocket协议的客户端提供一种模拟 -->
+    <websocket:handlers  allowed-origins="*">
+        <websocket:mapping path="/sockjs/webLogin" handler="webLoginHandler" />
+        <websocket:handshake-interceptors>
+            <ref bean="webHandshakeInterceptor" />
+        </websocket:handshake-interceptors>
+        <websocket:sockjs />
+    </websocket:handlers>
+
+    <!--配置 webSocket-->
+    <bean id="webDeleteCourseHandler" class="com.sora.websocket.WebDeleteCourseHandler"/>
+    <websocket:handlers  allowed-origins="*">
+        <!--指定 webSocket 地址-->
+        <websocket:mapping path="/webDeleteCourse" handler="webDeleteCourseHandler"/>
+        <websocket:handshake-interceptors>
+            <ref bean="webHandshakeInterceptor" />
+        </websocket:handshake-interceptors>
+    </websocket:handlers>
+
+    <!-- 注册 sockJS,sockJs是spring对不能使用websocket协议的客户端提供一种模拟 -->
+    <websocket:handlers  allowed-origins="*">
+        <websocket:mapping path="/sockjs/webDeleteCourse" handler="webDeleteCourseHandler" />
+        <websocket:handshake-interceptors>
+            <ref bean="webHandshakeInterceptor" />
+        </websocket:handshake-interceptors>
+        <websocket:sockjs />
+    </websocket:handlers>
+
+
+    <!-- 开启注解支持 -->
+    <mvc:annotation-driven/>
+
+</beans>

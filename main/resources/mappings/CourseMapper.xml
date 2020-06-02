@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.ICourseDao">
+
+    <resultMap id="User" type="User">
+        <id property="id" column="user_id"></id>
+    </resultMap>
+
+    <resultMap id="Course" type="Course">
+        <id property="id" column="course_id"></id>
+        <result property="name" column="course_name"></result>
+        <result property="status" column="course_status"></result>
+        <association property="teacher" javaType="Teacher">
+            <id property="id" column="teacher_user_id"></id>
+            <result property="avatarUrl" column="teacher_avatar_url"></result>
+            <result property="name" column="teacher_name"></result>
+            <result property="sex" column="teacher_sex"></result>
+            <result property="workId" column="teacher_id"></result>
+        </association>
+        <collection property="studentList" ofType="Student">
+            <id property="id" column="student_user_id"></id>
+            <result property="avatarUrl" column="student_avatar_url"></result>
+            <result property="name" column="student_name"></result>
+            <result property="sex" column="student_sex"></result>
+            <result property="workId" column="student_id"></result>
+            <association property="aClass" javaType="Class" resultMap="Class"></association>
+        </collection>
+        <collection property="keywordList" ofType="Keyword">
+            <id property="id" column="keyword_id"></id>
+            <result property="name" column="keyword_name"></result>
+        </collection>
+    </resultMap>
+
+    <resultMap id="Class" type="Class">
+        <id property="id" column="class_id"></id>
+        <result property="name" column="class_name"></result>
+        <result property="department" column="class_department"></result>
+    </resultMap>
+
+    <insert id="addCourse" parameterType="Course">
+        INSERT INTO course(name,user_id,status) VALUES(#{name},#{teacher.id},#{status});
+    </insert>
+
+    <select id="findAllByUserId" parameterType="java.lang.Long" resultMap="Course">
+        SELECT course.course_id    AS course_id,
+                course.name        AS course_name,
+                teacher.user_id    AS teacher_user_id,
+                teacher.name       AS teacher_name,
+                teacher.sex        AS teacher_sex,
+                teacher.teacher_id AS teacher_id,
+                u1.avatar_url      AS teacher_avatar_url,
+                student.user_id    AS student_user_id,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department,
+                u2.avatar_url      AS student_avatar_url,
+                keyword.keyword_id AS keyword_id,
+                keyword.name       AS keyword_name
+        FROM
+            course JOIN teacher ON course.user_id = teacher.user_id
+            JOIN user u1 ON u1.user_id = teacher.user_id
+            LEFT JOIN sc ON sc.course_id = course.course_id
+            LEFT JOIN student ON sc.user_id = student.user_id
+            LEFT JOIN class ON student.class_id = class.class_id
+            LEFT JOIN user u2 ON u2.user_id = student.user_id
+            LEFT JOIN keyword ON keyword.course_id = course.course_id
+            WHERE teacher.user_id = #{userId} OR student.user_id = #{userId}
+        ORDER BY course.course_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findByCourseId" parameterType="java.lang.Long" resultMap="Course">
+        SELECT course.course_id    AS course_id,
+                course.name        AS course_name,
+                teacher.user_id    AS teacher_user_id,
+                teacher.name       AS teacher_name,
+                teacher.sex        AS teacher_sex,
+                teacher.teacher_id AS teacher_id,
+                u1.avatar_url      AS teacher_avatar_url,
+                student.user_id    AS student_user_id,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_user_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department,
+                u2.avatar_url      AS student_avatar_url,
+                keyword.keyword_id AS keyword_id,
+                keyword.name       AS keyword_name
+        FROM
+            course JOIN teacher ON course.user_id = teacher.user_id
+            JOIN user u1 ON u1.user_id = teacher.user_id
+            LEFT JOIN sc ON sc.course_id = course.course_id
+            LEFT JOIN student ON sc.user_id = student.user_id
+            LEFT JOIN class ON student.class_id = class.class_id
+            LEFT JOIN user u2 ON u2.user_id = student.user_id
+            LEFT JOIN keyword ON keyword.course_id = course.course_id
+            WHERE course.course_id = #{courseId}
+        ORDER BY keyword.keyword_id DESC
+    </select>
+
+    <insert id="joinCourse">
+        INSERT sc(user_id,course_id) VALUES (#{param1},#{param2});
+    </insert>
+
+    <delete id="deleteCourse">
+        DELETE FROM course
+        WHERE course_id = #{id}
+    </delete>
+
+    <select id="findUser" resultMap="User">
+        SELECT user_id
+        FROM course
+        WHERE course_id = #{id}
+    </select>
+</mapper>

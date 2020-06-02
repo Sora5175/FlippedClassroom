@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.IAbsenceRecordDao">
+
+    <resultMap id="Student" type="Student">
+        <id property="id" column="user_id"></id>
+        <result property="name" column="student_name"></result>
+        <result property="sex" column="student_sex"></result>
+        <result property="workId" column="student_id"></result>
+        <association property="aClass" javaType="Class">
+            <id property="id" column="class_id"></id>
+            <result property="name" column="class_name"></result>
+            <result property="department" column="class_department"></result>
+        </association>
+    </resultMap>
+
+    <resultMap id="Course" type="Course">
+        <id property="id" column="course_id"></id>
+        <result property="name" column="course_name"></result>
+    </resultMap>
+
+    <resultMap id="AbsenceRecord" type="AbsenceRecord">
+        <result property="time" column="absence_record_time"></result>
+        <result property="export" column="absence_export"></result>
+        <association property="student" resultMap="Student"></association>
+        <association property="course" resultMap="Course"></association>
+    </resultMap>
+
+
+    <insert id="addAbsenceRecord">
+        INSERT INTO absence_record(user_id,course_id,`time`) VALUES (#{student.id},#{course.id},#{time});
+    </insert>
+
+    <update id="setExported">
+        UPDATE absence_record
+        SET export = 1
+        WHERE user_id = #{student.id} AND course_id = #{course.id} AND time = #{time}
+    </update>
+
+    <select id="findAllByCourseId" resultMap="AbsenceRecord">
+        SELECT  student.user_id    AS user_id,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department,
+                course.course_id   AS course_id,
+                course.name  AS course_name,
+                absence_record.time AS absence_record_time,
+                absence_record.export AS absence_record_export
+        FROM
+            absence_record JOIN student ON absence_record.user_id = student.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN course ON absence_record.course_id = course.course_id
+            WHERE absence_record.course_id = #{courseId}
+    </select>
+
+    <select id="findAllNotExportedByCourseId" resultMap="AbsenceRecord">
+        SELECT  student.user_id    AS user_id,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department,
+                course.course_id   AS course_id,
+                course.name  AS course_name,
+                absence_record.time AS absence_record_time,
+                absence_record.export AS absence_record_export
+        FROM
+            absence_record JOIN student ON absence_record.user_id = student.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN course ON absence_record.course_id = course.course_id
+            WHERE absence_record.export = 0 AND absence_record.course_id = #{courseId}
+    </select>
+</mapper>

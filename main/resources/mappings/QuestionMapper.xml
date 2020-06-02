@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.IQuestionDao">
+
+    <resultMap id="User" type="User">
+        <id property="id" column="user_id"></id>
+    </resultMap>
+
+    <resultMap id="Question" type="Question">
+        <id property="id" column="question_id"></id>
+        <result property="content" column="question_content"></result>
+        <result property="answerDescription" column="question_answer_description"></result>
+        <collection property="optionList" resultMap="Option"></collection>
+    </resultMap>
+
+    <resultMap id="Option" type="Option">
+        <id property="id" column="option_id"></id>
+        <result property="content" column="option_content"></result>
+        <result property="correct" column="option_correct"></result>
+    </resultMap>
+
+    <select id="findAllByBlogId" parameterType="java.lang.Long" resultMap="Question">
+        SELECT  question.question_id        AS question_id,
+                question.content            AS question_content,
+                question.answer_description AS question_answer_description,
+                option.option_id            AS option_id,
+                option.content              AS option_content,
+                option.correct              AS option_correct
+        FROM
+                question JOIN `option` ON question.question_id = option.question_id
+                JOIN qk ON question.question_id = qk.question_id
+                JOIN bk ON bk.keyword_id = qk.keyword_id
+        WHERE bk.blog_id = #{blogId}
+        ORDER BY question.question_id DESC
+    </select>
+
+    <select id="findAllByCourseId" parameterType="java.lang.Long" resultMap="Question">
+        SELECT  question.question_id        AS question_id,
+                question.content            AS question_content,
+                question.answer_description AS question_answer_description,
+                option.option_id            AS option_id,
+                option.content              AS option_content,
+                option.correct              AS option_correct
+        FROM
+                question JOIN `option` ON question.question_id = option.question_id
+        WHERE question.course_id = #{courseId}
+        ORDER BY question.question_id DESC
+    </select>
+
+    <select id="findAllByCourseIdAndKey" resultMap="Question">
+        SELECT DISTINCT question.question_id        AS question_id,
+                        question.content            AS question_content,
+                        question.answer_description AS question_answer_description,
+                        option.option_id            AS option_id,
+                        option.content              AS option_content,
+                        option.correct              AS option_correct
+        FROM
+                question JOIN `option` ON question.question_id = option.question_id
+                LEFT JOIN qk ON qk.question_id = question.question_id
+                JOIN keyword ON keyword.keyword_id = qk.keyword_id
+        WHERE question.course_id = #{param1} AND (question.content LIKE #{param2} OR keyword.name LIKE #{param2})
+        ORDER BY question.question_id DESC
+    </select>
+
+    <delete id="deleteQuestion">
+        DELETE FROM question
+        WHERE question_id = #{id}
+    </delete>
+
+    <select id="findUser" resultMap="User">
+        SELECT course.user_id AS user_id
+        FROM question JOIN course ON question.course_id = course.course_id
+        SELECT blog.user_id AS user_id
+        FROM question JOIN bq ON question.question_id = bq.question_id
+        JOIN blog ON blog.blog_id = bq.blog_id
+        WHERE question.question_id = #{id}
+    </select>
+
+    <insert id="addQuestion">
+        INSERT INTO question(content,answer_description,course_id) VALUES (#{param1.content},#{param1.answerDescription},#{param2})
+        <selectKey keyProperty="param1.id" resultType="java.lang.Long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="addOption">
+        INSERT INTO `option`(question_id,content,correct) VALUES (#{param2.id},#{param1.content},#{param1.correct})
+    </insert>
+
+    <insert id="addKeyword">
+        INSERT INTO `qk`(question_id,keyword_id) VALUES (#{param2.id},#{param1.id})
+    </insert>
+
+</mapper>

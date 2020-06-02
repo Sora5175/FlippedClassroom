@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.IUserDao">
+
+    <resultMap id="User" type="User">
+        <id property="id" column="user_id"></id>
+        <result property="openId" column="open_id"></result>
+        <result property="role" column="role"></result>
+        <result property="avatarUrl" column="avatar_url"></result>
+    </resultMap>
+
+    <resultMap id="Student" type="Student">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="role" column="user_role"></result>
+        <result property="name" column="student_name"></result>
+        <result property="sex" column="student_sex"></result>
+        <result property="workId" column="student_id"></result>
+        <association property="aClass" javaType="Class">
+            <id property="id" column="class_id"></id>
+            <result property="name" column="class_name"></result>
+            <result property="department" column="class_department"></result>
+        </association>
+    </resultMap>
+
+    <resultMap id="Teacher" type="Teacher">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="role" column="user_role"></result>
+        <result property="name" column="teacher_name"></result>
+        <result property="sex" column="teacher_sex"></result>
+        <result property="workId" column="teacher_id"></result>
+        <association property="school" javaType="School">
+            <id property="id" column="school_id"></id>
+            <result property="name" column="school_name"></result>
+        </association>
+    </resultMap>
+
+    <select id="findUserByOpenId" parameterType="java.lang.String" resultMap="User">
+        SELECT * FROM USER WHERE open_id = #{openID};
+    </select>
+
+    <insert id="addUser" parameterType="User">
+        INSERT INTO user(open_id,role) VALUES(#{openId},#{role})
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="addStudent" parameterType="Student">
+        Insert INTO student(student_id,class_id,user_id,name,sex) VALUES(#{workId},#{aClass.id},#{id},#{name},#{sex})
+    </insert>
+
+    <delete id="deleteStudent">
+        DELETE FROM student
+        WHERE student.user_id = #{id}
+    </delete>
+
+    <insert id="addTeacher" parameterType="Teacher">
+        Insert INTO teacher(teacher_id,school_id,user_id,name,sex) VALUES(#{workId},#{school.id},#{id},#{name},#{sex})
+    </insert>
+
+    <update id="updateAvatarUrl">
+        UPDATE user SET avatar_url = #{param2}
+        WHERE user_id = #{param1}
+    </update>
+
+    <select id="findStudentById" resultMap="Student" parameterType="java.lang.Long">
+        SELECT  user.avatar_url    AS user_avatar_url,
+                user.role          AS user_role,
+                student.user_id    AS user_id,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department
+        FROM
+            student JOIN class ON student.class_id = class.class_id
+            JOIN user ON student.user_id = user.user_id
+            WHERE user.user_id = #{id}
+    </select>
+
+    <select id="findTeacherById" resultMap="Teacher">
+        SELECT  user.avatar_url    AS user_avatar_url,
+                user.role          AS user_role,
+                teacher.user_id    AS user_id,
+                teacher.name       AS teacher_name,
+                teacher.sex        AS teacher_sex,
+                teacher.teacher_id AS teacher_id,
+                school.school_id   AS school_id,
+                school.name        AS school_name
+        FROM
+            teacher JOIN school ON teacher.school_id = school.school_id
+            JOIN user ON teacher.user_id = user.user_id
+            WHERE user.user_id = #{id}
+    </select>
+
+    <select id="findUserById" resultMap="User">
+        SELECT  user.user_id AS user_id,
+                user.role    AS role,
+                user.avatar_url AS avatar_url
+        FROM
+             user
+        WHERE user.user_id = #{id}
+    </select>
+
+</mapper>

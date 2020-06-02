@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.ICommentDao">
+
+    <resultMap id="Student" type="Student">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="name" column="student_name"></result>
+        <result property="sex" column="student_sex"></result>
+        <result property="workId" column="student_id"></result>
+        <association property="aClass" javaType="Class">
+            <id property="id" column="class_id"></id>
+            <result property="name" column="class_name"></result>
+            <result property="department" column="class_department"></result>
+        </association>
+    </resultMap>
+
+    <resultMap id="Teacher" type="Teacher">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="name" column="teacher_name"></result>
+        <result property="sex" column="teacher_sex"></result>
+        <result property="workId" column="teacher_id"></result>
+    </resultMap>
+
+    <resultMap id="Comment_Student" type="Comment">
+        <id property="id" column="comment_id"></id>
+        <result property="content" column="comment_content"></result>
+        <result property="top" column="comment_is_top"></result>
+        <result property="preId" column="comment_pre_id"></result>
+        <result property="publishTime" column="comment_publish_time"></result>
+        <association property="user" resultMap="Student"></association>
+    </resultMap>
+
+    <resultMap id="Comment_Teacher" type="Comment">
+        <id property="id" column="comment_id"></id>
+        <result property="content" column="comment_content"></result>
+        <result property="top" column="comment_is_top"></result>
+        <result property="preId" column="comment_pre_id"></result>
+        <result property="publishTime" column="comment_publish_time"></result>
+        <association property="user" resultMap="Teacher"></association>
+    </resultMap>
+
+    <insert id="addPreComment" parameterType="Comment">
+        INSERT INTO comment(content,user_id,blog_id,publish_time) VALUES (#{param1.content},#{param1.user.id},#{param2},#{param1.publishTime});
+    </insert>
+
+    <insert id="addComment" parameterType="Comment">
+        INSERT INTO comment(content,pre_comment_id,user_id,blog_id,publish_time) VALUES (#{param1.content},#{param1.preId},#{param1.user.id},#{param2},#{param1.publishTime});
+    </insert>
+
+    <select id="findAllTeacherByBlogId" parameterType="java.lang.Long" resultMap="Comment_Teacher">
+        SELECT  comment.comment_id AS comment_id,
+                comment.content    AS comment_content,
+                comment.is_top     AS comment_is_top,
+                comment.pre_comment_id AS comment_pre_id,
+                comment.publish_time   AS comment_publish_time,
+                user.user_id       AS user_id,
+                user.avatar_url    AS user_avatar_url,
+                teacher.name       AS teacher_name,
+                teacher.sex        AS teacher_sex,
+                teacher.teacher_id AS teacher_id
+        FROM
+                comment JOIN teacher ON comment.user_id = teacher.user_id
+                JOIN user ON user.user_id = teacher.user_id
+        WHERE comment.blog_id = #{blogId}
+    </select>
+
+    <select id="findAllStudentByBlogId" parameterType="java.lang.Long" resultMap="Comment_Student">
+        SELECT  comment.comment_id AS comment_id,
+                comment.content    AS comment_content,
+                comment.is_top     AS comment_is_top,
+                comment.pre_comment_id AS comment_pre_id,
+                comment.publish_time   AS comment_publish_time,
+                user.user_id       AS user_id,
+                user.avatar_url    AS user_avatar_url,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department
+        FROM
+                comment JOIN student ON student.user_id = comment.user_id
+                JOIN class ON student.class_id = class.class_id
+                JOIN user ON user.user_id = student.user_id
+        WHERE comment.blog_id = #{blogId}
+    </select>
+
+    <update id="updateComment">
+        UPDATE comment
+        SET content = #{content},is_top = #{top}
+        WHERE comment_id = #{id}
+    </update>
+
+    <delete id="deleteComment">
+        DELETE FROM comment
+        WHERE comment_id = #{id}
+    </delete>
+
+    <select id="findAllTeacherReplyByUserId" parameterType="java.lang.Long" resultMap="Comment_Teacher">
+        SELECT  c1.comment_id AS comment_id,
+                c1.content    AS comment_content,
+                c1.is_top     AS comment_is_top,
+                c1.pre_comment_id AS comment_pre_id,
+                c1.publish_time   AS comment_publish_time,
+                user.user_id       AS user_id,
+                user.avatar_url    AS user_avatar_url,
+                teacher.name       AS teacher_name,
+                teacher.sex        AS teacher_sex,
+                teacher.teacher_id AS teacher_id
+        FROM
+                comment c1 LEFT JOIN comment c2 ON c1.pre_comment_id = c2.comment_id
+                JOIN blog ON c1.blog_id = blog.blog_id
+                JOIN teacher ON c1.user_id = teacher.user_id
+                JOIN user ON user.user_id = teacher.user_id
+        WHERE c2.user_id = #{userId}  OR (blog.user_id = #{userId} AND c1.pre_comment_id IS NULL)
+    </select>
+
+    <select id="findAllStudentReplyByUserId" parameterType="java.lang.Long" resultMap="Comment_Student">
+        SELECT  c1.comment_id AS comment_id,
+                c1.content    AS comment_content,
+                c1.is_top     AS comment_is_top,
+                c1.pre_comment_id AS comment_pre_id,
+                c1.publish_time   AS comment_publish_time,
+                user.user_id       AS user_id,
+                user.avatar_url    AS user_avatar_url,
+                student.name       AS student_name,
+                student.sex        AS student_sex,
+                student.student_id AS student_id,
+                class.class_id     AS class_id,
+                class.name         AS class_name,
+                class.department   AS class_department
+        FROM
+                comment c1 LEFT JOIN comment c2 ON c1.pre_comment_id = c2.comment_id
+                JOIN blog ON c1.blog_id = blog.blog_id
+                JOIN student ON student.user_id = c1.user_id
+                JOIN class ON student.class_id = class.class_id
+                JOIN user ON user.user_id = student.user_id
+        WHERE  c2.user_id = #{userId} OR (blog.user_id = #{userId} AND c1.pre_comment_id IS NULL)
+    </select>
+
+    <select id="getBlogIdById" resultType="java.lang.Long">
+        SELECT comment.blog_id
+        FROM comment
+        WHERE comment.comment_id = #{commentId}
+    </select>
+
+</mapper>

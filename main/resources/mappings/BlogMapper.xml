@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sora.dao.IBlogDao">
+
+    <resultMap id="Student" type="Student">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="name" column="student_name"></result>
+        <result property="sex" column="student_sex"></result>
+        <result property="workId" column="student_id"></result>
+        <association property="aClass" javaType="Class">
+            <id property="id" column="class_id"></id>
+            <result property="name" column="class_name"></result>
+            <result property="department" column="class_department"></result>
+        </association>
+    </resultMap>
+
+    <resultMap id="Teacher" type="Teacher">
+        <id property="id" column="user_id"></id>
+        <result property="avatarUrl" column="user_avatar_url"></result>
+        <result property="name" column="teacher_name"></result>
+        <result property="sex" column="teacher_sex"></result>
+        <result property="workId" column="teacher_id"></result>
+    </resultMap>
+
+    <resultMap id="Source" type="Source">
+        <id property="id" column="source_id"></id>
+        <result property="name" column="source_name"></result>
+        <result property="location" column="source_location"></result>
+    </resultMap>
+
+    <resultMap id="Course" type="Course">
+        <id property="id" column="course_id"></id>
+        <result property="name" column="course_name"></result>
+    </resultMap>
+
+    <resultMap id="Keyword" type="Keyword">
+        <id property="id" column="keyword_id"></id>
+        <result property="name" column="keyword_name"></result>
+    </resultMap>
+
+    <resultMap id="Blog_Teacher" type="Blog">
+        <id property="id" column="blog_id"></id>
+        <result property="description" column="blog_description"></result>
+        <result property="forwardDescription" column="blog_forward_description"></result>
+        <result property="publishTime" column="blog_publish_time"></result>
+        <association property="user" resultMap="Teacher"></association>
+        <association property="source" resultMap="Source"></association>
+        <association property="course" resultMap="Course"></association>
+        <collection property="keywordList" resultMap="Keyword"></collection>
+    </resultMap>
+
+    <resultMap id="Blog_Student" type="Blog">
+        <id property="id" column="blog_id"></id>
+        <result property="description" column="blog_description"></result>
+        <result property="forwardDescription" column="blog_forward_description"></result>
+        <result property="publishTime" column="blog_publish_time"></result>
+        <association property="user" resultMap="Student"></association>
+        <association property="source" resultMap="Source"></association>
+        <association property="course" resultMap="Course"></association>
+        <collection property="keywordList" resultMap="Keyword"></collection>
+    </resultMap>
+
+
+    <insert id="addBlog" parameterType="Blog">
+        INSERT INTO blog(description,forward_description,course_id,user_id,publish_time) VALUES (#{description},#{forwardDescription},#{course.id},#{user.id},#{publishTime});
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="addSource" parameterType="Blog">
+        INSERT INTO source(name,blog_id,location) VALUES (#{source.name},#{id},#{source.location})
+    </insert>
+
+    <select id="findAllRelativedTeacherBlogByUserId" parameterType="java.lang.Long" resultMap="Blog_Teacher">
+        SELECT blog.blog_id   AS blog_id,
+           blog.description   AS blog_description,
+           blog.forward_description AS blog_forward_description,
+           blog.publish_time  AS blog_publish_time,
+           user.user_id       AS user_id,
+           user.avatar_url    AS user_avatar_url,
+           teacher.name       AS teacher_name,
+           teacher.sex        AS teacher_sex,
+           teacher.teacher_id AS teacher_id,
+           source.source_id   AS source_id,
+           source.name        AS source_name,
+           source.location    AS source_location,
+           course.course_id   AS course_id,
+           course.name        AS course_name,
+           keyword.keyword_id  AS keyword_id,
+           keyword.name        AS keyword_name
+        FROM
+            course JOIN sc ON (sc.user_id = #{userId}  AND course.course_id = sc.course_id) OR course.user_id = #{userId}
+            course LEFT JOIN sc ON (sc.user_id = #{userId}  AND course.course_id = sc.course_id) OR course.user_id = #{userId}
+            LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN teacher ON teacher.user_id = blog.user_id
+            JOIN user ON user.user_id = blog.user_id
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findAllRelativedStudentBlogByUserId" parameterType="java.lang.Long" resultMap="Blog_Student">
+        SELECT blog.blog_id       AS blog_id,
+               blog.description   AS blog_description,
+               blog.forward_description AS blog_forward_description,
+               blog.publish_time  AS blog_publish_time,
+               user.user_id       AS user_id,
+               user.avatar_url    AS user_avatar_url,
+               student.name       AS student_name,
+               student.sex        AS student_sex,
+               student.student_id AS student_id,
+               class.class_id     AS class_id,
+               class.name         AS class_name,
+               class.department   AS class_department,
+               source.source_id   AS source_id,
+               source.name        AS source_name,
+               source.location    AS source_location,
+               course.course_id   AS course_id,
+               course.name        AS course_name,
+                keyword.keyword_id  AS keyword_id,
+                keyword.name        AS keyword_name
+        FROM
+            course JOIN blog ON blog.course_id = course.course_id
+            course LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN student ON student.user_id = blog.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN user ON user.user_id = blog.user_id
+            WHERE course.user_id = #{userId}
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findAllRelativedTeacherBlogByUserIdAndKey" resultMap="Blog_Teacher">
+        SELECT blog.blog_id   AS blog_id,
+           blog.description   AS blog_description,
+           blog.forward_description AS blog_forward_description,
+           blog.publish_time  AS blog_publish_time,
+           user.user_id       AS user_id,
+           user.avatar_url    AS user_avatar_url,
+           teacher.name       AS teacher_name,
+           teacher.sex        AS teacher_sex,
+           teacher.teacher_id AS teacher_id,
+           source.source_id   AS source_id,
+           source.name        AS source_name,
+           source.location    AS source_location,
+           course.course_id   AS course_id,
+           course.name        AS course_name,
+           keyword.keyword_id  AS keyword_id,
+           keyword.name        AS keyword_name
+        FROM
+            course JOIN sc ON (sc.user_id = #{param1}  AND course.course_id = sc.course_id) OR course.user_id = #{param1}
+            course LEFT JOIN sc ON (sc.user_id = #{param1}  AND course.course_id = sc.course_id) OR course.user_id = #{param1}
+            LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN teacher ON teacher.user_id = blog.user_id
+            JOIN user ON user.user_id = blog.user_id
+        WHERE blog.description LIKE #{param2} OR keyword.name LIKE #{param2} OR course.name LIKE #{param2}
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findAllRelativedStudentBlogByUserIdAndKey" resultMap="Blog_Student">
+        SELECT blog.blog_id       AS blog_id,
+               blog.description   AS blog_description,
+               blog.forward_description AS blog_forward_description,
+               blog.publish_time  AS blog_publish_time,
+               user.user_id       AS user_id,
+               user.avatar_url    AS user_avatar_url,
+               student.name       AS student_name,
+               student.sex        AS student_sex,
+               student.student_id AS student_id,
+               class.class_id     AS class_id,
+               class.name         AS class_name,
+               class.department   AS class_department,
+               source.source_id   AS source_id,
+               source.name        AS source_name,
+               source.location    AS source_location,
+               course.course_id   AS course_id,
+               course.name        AS course_name,
+                keyword.keyword_id  AS keyword_id,
+                keyword.name        AS keyword_name
+        FROM
+            course JOIN blog ON blog.course_id = course.course_id
+            course LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN student ON student.user_id = blog.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN user ON user.user_id = blog.user_id
+            WHERE course.user_id = #{param1} AND (blog.description LIKE #{param2} OR keyword.name LIKE #{param2} OR course.name LIKE #{param2})
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+
+    <select id="findRelativedTeacherBlogsByUserIdAndCourseId" resultMap="Blog_Teacher">
+        SELECT blog.blog_id   AS blog_id,
+           blog.description   AS blog_description,
+           blog.forward_description AS blog_forward_description,
+           blog.publish_time  AS blog_publish_time,
+           user.user_id       AS user_id,
+           user.avatar_url    AS user_avatar_url,
+           teacher.name       AS teacher_name,
+           teacher.sex        AS teacher_sex,
+           teacher.teacher_id AS teacher_id,
+           source.source_id   AS source_id,
+           source.name        AS source_name,
+           source.location    AS source_location,
+           course.course_id   AS course_id,
+           course.name        AS course_name,
+            keyword.keyword_id  AS keyword_id,
+            keyword.name        AS keyword_name
+        FROM
+            course JOIN blog ON blog.course_id = course.course_id AND blog.user_id = #{param1} AND course.course_id = #{param2}
+            course LEFT JOIN blog ON blog.course_id = course.course_id AND blog.user_id = #{param1} AND course.course_id = #{param2}
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN teacher ON teacher.user_id = blog.user_id
+            JOIN user ON user.user_id = blog.user_id
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findRelativedStudentBlogsByUserIdAndCourseId" resultMap="Blog_Student">
+        SELECT blog.blog_id       AS blog_id,
+               blog.description   AS blog_description,
+               blog.forward_description AS blog_forward_description,
+               blog.publish_time  AS blog_publish_time,
+               user.user_id       AS user_id,
+               user.avatar_url    AS user_avatar_url,
+               student.name       AS student_name,
+               student.sex        AS student_sex,
+               student.student_id AS student_id,
+               class.class_id     AS class_id,
+               class.name         AS class_name,
+               class.department   AS class_department,
+               source.source_id   AS source_id,
+               source.name        AS source_name,
+               source.location    AS source_location,
+               course.course_id   AS course_id,
+               course.name        AS course_name,
+               keyword.keyword_id  AS keyword_id,
+            keyword.name        AS keyword_name
+        FROM
+            course JOIN blog ON blog.course_id = course.course_id AND blog.user_id = #{param1} AND course.course_id = #{param2}
+            course LEFT JOIN blog ON blog.course_id = course.course_id AND blog.user_id = #{param1} AND course.course_id = #{param2}
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN student ON student.user_id = blog.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN user ON user.user_id = blog.user_id
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findStudentsBlogsByCourseId" parameterType="java.lang.Long" resultMap="Blog_Student">
+        SELECT blog.blog_id       AS blog_id,
+               blog.description   AS blog_description,
+               blog.forward_description AS blog_forward_description,
+               blog.publish_time  AS blog_publish_time,
+               user.user_id       AS user_id,
+               user.avatar_url    AS user_avatar_url,
+               student.name       AS student_name,
+               student.sex        AS student_sex,
+               student.student_id AS student_id,
+               class.class_id     AS class_id,
+               class.name         AS class_name,
+               class.department   AS class_department,
+               source.source_id   AS source_id,
+               source.name        AS source_name,
+               source.location    AS source_location,
+               course.course_id   AS course_id,
+               course.name        AS course_name,
+               keyword.keyword_id  AS keyword_id,
+            keyword.name        AS keyword_name
+        FROM
+            course JOIN sc ON course.course_id=#{courseId} AND course.course_id = sc.course_id
+            course LEFT JOIN sc ON course.course_id=#{courseId} AND course.course_id = sc.course_id
+            LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN student ON student.user_id = blog.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN user ON user.user_id = blog.user_id
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findTeacherBlogsByUserId" parameterType="java.lang.Long" resultMap="Blog_Teacher">
+        SELECT blog.blog_id   AS blog_id,
+           blog.description   AS blog_description,
+           blog.forward_description AS blog_forward_description,
+           blog.publish_time  AS blog_publish_time,
+           user.user_id       AS user_id,
+           user.avatar_url    AS user_avatar_url,
+           teacher.name       AS teacher_name,
+           teacher.sex        AS teacher_sex,
+           teacher.teacher_id AS teacher_id,
+           source.source_id   AS source_id,
+           source.name        AS source_name,
+           source.location    AS source_location,
+           course.course_id   AS course_id,
+           course.name        AS course_name,
+           keyword.keyword_id  AS keyword_id,
+            keyword.name        AS keyword_name
+        FROM
+            course JOIN blog ON blog.course_id = course.course_id
+            course LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN teacher ON teacher.user_id = blog.user_id
+            JOIN user ON user.user_id = blog.user_id
+        WHERE user.user_id = #{userId}
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <select id="findStudentBlogsByUserId" parameterType="java.lang.Long" resultMap="Blog_Student">
+        SELECT blog.blog_id       AS blog_id,
+               blog.description   AS blog_description,
+               blog.forward_description AS blog_forward_description,
+               blog.publish_time  AS blog_publish_time,
+               user.user_id       AS user_id,
+               user.avatar_url    AS user_avatar_url,
+               student.name       AS student_name,
+               student.sex        AS student_sex,
+               student.student_id AS student_id,
+               class.class_id     AS class_id,
+               class.name         AS class_name,
+               class.department   AS class_department,
+               source.source_id   AS source_id,
+               source.name        AS source_name,
+               source.location    AS source_location,
+               course.course_id   AS course_id,
+               course.name        AS course_name,
+               keyword.keyword_id  AS keyword_id,
+            keyword.name        AS keyword_name
+        FROM
+            course JOIN sc ON course.course_id = sc.course_id
+            course LEFT JOIN sc ON course.course_id = sc.course_id
+            LEFT JOIN blog ON blog.course_id = course.course_id
+            LEFT JOIN source ON source.blog_id = blog.blog_id
+            LEFT JOIN bk ON bk.blog_id = blog.blog_id
+            LEFT JOIN keyword ON bk.keyword_id = keyword.keyword_id
+            JOIN student ON student.user_id = blog.user_id
+            JOIN class ON student.class_id = class.class_id
+            JOIN user ON user.user_id = blog.user_id
+        WHERE user.user_id = #{userId}
+        ORDER BY blog.blog_id DESC,keyword.keyword_id DESC
+    </select>
+
+    <delete id="deleteBlog" parameterType="Blog">
+        DELETE FROM blog WHERE blog_id = #{id}
+    </delete>
+
+    <insert id="addKeyword">
+        INSERT INTO bk(blog_id,keyword_id) VALUES(#{param2.id},#{param1.id})
+    </insert>
+</mapper>

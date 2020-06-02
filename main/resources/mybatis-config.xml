@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!--加载jdbc连接属性-->
+    <properties resource="jdbcConfig.properties"></properties>
+
+    <!-- 全局的配置 -->
+    <settings>
+        <!-- 日志技术 -->
+        <setting name="logImpl" value="log4j"/>
+
+        <!-- 开启延迟加载功能 -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <!-- 设置不要积极地去查询关联对象 -->
+        <setting name="aggressiveLazyLoading" value="false"/>
+        <!-- 延迟加载触发的方法 -->
+        <setting name="lazyLoadTriggerMethods" value="clone"/>
+
+        <!-- 启用二级缓存，缺省已经开启 -->
+        <setting name="cacheEnabled" value="true"/>
+
+        <!--驼峰-->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+    </settings>
+
+    <!--配置环境-->
+    <environments default="mysql">
+        <!--配置mysql的环境-->
+        <environment id="mysql">
+            <!--配置事务的类型-->
+            <transactionManager type="JDBC"/>
+            <!--配置连接池-->
+            <dataSource type="POOLED">
+                <!--配置连接数据库的四个基本信息-->
+                <property name="driver" value="${jdbc.driverClassName}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+</configuration>
